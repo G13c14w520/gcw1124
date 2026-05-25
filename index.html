@@ -2,112 +2,159 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>俄罗斯方块</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; font-family: Arial, sans-serif; }
-        .container { text-align: center; padding: 20px; }
-        h1 { color: #fff; font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        .game-area { display: flex; gap: 30px; justify-content: center; align-items: flex-start; }
-        #gameCanvas { border: 4px solid #4a5568; border-radius: 8px; background: #1a1a2e; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .info-panel { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; min-width: 150px; color: #fff; backdrop-filter: blur(10px); }
-        .info-panel h3 { margin-bottom: 10px; color: #a0aec0; font-size: 1em; }
-        .info-panel p { font-size: 1.5em; font-weight: bold; color: #48bb78; margin-bottom: 20px; }
-        .next-block { margin-bottom: 20px; }
-        #nextCanvas { background: rgba(0,0,0,0.3); border-radius: 4px; }
-        .controls { margin-top: 20px; display: flex; gap: 15px; justify-content: center; }
-        button { padding: 12px 24px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; }
-        #startBtn { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
-        #startBtn:hover { background: linear-gradient(135deg, #38a169, #2f855a); transform: scale(1.05); }
-        #pauseBtn { background: linear-gradient(135deg, #ed8936, #dd6b20); color: white; }
-        #pauseBtn:hover { background: linear-gradient(135deg, #dd6b20, #c05621); transform: scale(1.05); }
-        #resetBtn { background: linear-gradient(135deg, #f56565, #e53e3e); color: white; }
-        #resetBtn:hover { background: linear-gradient(135deg, #e53e3e, #c53030); transform: scale(1.05); }
-        .instructions { margin-top: 25px; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; color: #fff; backdrop-filter: blur(10px); }
-        .instructions h3 { margin-bottom: 15px; color: #a0aec0; }
-        .instructions ul { list-style: none; display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
-        .instructions li { background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 4px; font-size: 14px; }
-        @media (max-width: 600px) { .game-area { flex-direction: column; align-items: center; } .instructions ul { grid-template-columns: 1fr; } h1 { font-size: 1.8em; } }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="mainContainer">
         <h1>俄罗斯方块</h1>
-        <div class="game-area">
-            <canvas id="gameCanvas" width="200" height="400"></canvas>
-            <div class="info-panel">
-                <div class="next-block">
-                    <h3>下一个</h3>
-                    <canvas id="nextCanvas" width="100" height="100"></canvas>
-                </div>
-                <div class="score">
-                    <h3>分数</h3>
-                    <p id="score">0</p>
-                </div>
-                <div class="lines">
-                    <h3>消除行数</h3>
-                    <p id="lines">0</p>
-                </div>
-                <div class="level">
-                    <h3>等级</h3>
-                    <p id="level">1</p>
+
+        <!-- 难度选择界面 -->
+        <div class="difficulty-modal" id="difficultyModal">
+            <div class="modal-content">
+                <h2>选择难度</h2>
+                <div class="difficulty-options">
+                    <button class="difficulty-btn" data-difficulty="easy">
+                        <span class="difficulty-name">简单</span>
+                        <span class="difficulty-desc">速度: 1000ms | 网格: 10x20</span>
+                    </button>
+                    <button class="difficulty-btn" data-difficulty="normal">
+                        <span class="difficulty-name">普通</span>
+                        <span class="difficulty-desc">速度: 800ms | 网格: 10x20</span>
+                    </button>
+                    <button class="difficulty-btn" data-difficulty="hard">
+                        <span class="difficulty-name">困难</span>
+                        <span class="difficulty-desc">速度: 500ms | 网格: 12x24</span>
+                    </button>
                 </div>
             </div>
         </div>
-        <div class="controls">
-            <button id="startBtn">开始游戏</button>
-            <button id="pauseBtn">暂停</button>
-            <button id="resetBtn">重新开始</button>
+
+        <!-- 游戏结算界面 -->
+        <div class="game-over-modal" id="gameOverModal">
+            <div class="modal-content slide-in">
+                <h2>游戏结束</h2>
+                <div class="score-display">
+                    <div class="score-item">
+                        <span class="score-label">本次得分</span>
+                        <span class="score-value" id="finalScore">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="score-label">最高分</span>
+                        <span class="score-value best" id="bestScore">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="score-label">消除行数</span>
+                        <span class="score-value" id="finalLines">0</span>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button class="modal-btn primary" id="playAgainBtn">再来一局</button>
+                    <button class="modal-btn secondary" id="replayBtn">回放</button>
+                    <button class="modal-btn secondary" id="viewRankingBtn">排行榜</button>
+                </div>
+            </div>
         </div>
-        <div class="instructions">
-            <h3>操作说明</h3>
-            <ul>
-                <li>← → 左右移动</li>
-                <li>↑ 旋转</li>
-                <li>↓ 加速下落</li>
-                <li>空格 直接落下</li>
-                <li>P 暂停/继续</li>
-            </ul>
+
+        <!-- 排行榜界面 -->
+        <div class="ranking-modal" id="rankingModal">
+            <div class="modal-content slide-in">
+                <h2>排行榜</h2>
+                <div class="ranking-list" id="rankingList">
+                    <div class="ranking-item header">
+                        <span>排名</span>
+                        <span>分数</span>
+                        <span>时间</span>
+                    </div>
+                </div>
+                <button class="modal-btn primary" id="closeRankingBtn">关闭</button>
+            </div>
         </div>
+
+        <!-- 暂停界面 -->
+        <div class="pause-overlay" id="pauseOverlay">
+            <div class="pause-content">
+                <h2>游戏暂停</h2>
+                <p>按 P 或点击继续按钮</p>
+                <button class="modal-btn primary" id="continueBtn">继续游戏</button>
+            </div>
+        </div>
+
+        <!-- 回放界面 -->
+        <div class="replay-overlay" id="replayOverlay">
+            <div class="replay-content">
+                <h2>回放中</h2>
+                <div class="replay-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="replayProgress"></div>
+                    </div>
+                    <span id="replayStatus">0%</span>
+                </div>
+                <div class="replay-controls">
+                    <button class="modal-btn secondary" id="replayPauseBtn">暂停</button>
+                    <button class="modal-btn secondary" id="replaySpeedBtn">速度: 1x</button>
+                    <button class="modal-btn secondary" id="replayStopBtn">停止</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-wrapper">
+            <div class="game-area">
+                <canvas id="gameCanvas"></canvas>
+                <div class="info-panel">
+                    <div class="next-block">
+                        <h3>下一个</h3>
+                        <canvas id="nextCanvas"></canvas>
+                    </div>
+                    <div class="score-section">
+                        <h3>分数</h3>
+                        <p id="score">0</p>
+                    </div>
+                    <div class="score-section">
+                        <h3>最高分</h3>
+                        <p id="highScore">0</p>
+                    </div>
+                    <div class="score-section">
+                        <h3>消除行数</h3>
+                        <p id="lines">0</p>
+                    </div>
+                    <div class="score-section">
+                        <h3>等级</h3>
+                        <p id="level">1</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="startBtn">开始游戏</button>
+                <button id="pauseBtn">暂停</button>
+                <button id="resetBtn">重新开始</button>
+                <button id="muteBtn">🔊 音效</button>
+                <button id="themeBtn">🎨 主题</button>
+                <button id="rankingBtn">🏆 排行榜</button>
+            </div>
+
+            <div class="instructions">
+                <h3>操作说明</h3>
+                <ul>
+                    <li>← → 左右移动</li>
+                    <li>↑ 旋转</li>
+                    <li>↓ 加速下落</li>
+                    <li>空格 直接落下</li>
+                    <li>P 暂停/继续</li>
+                </ul>
+                <div class="touch-hint">
+                    <h4>触屏操作</h4>
+                    <p>左滑/右滑移动 | 上滑旋转 | 下滑加速</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 得分飘字容器 -->
+        <div class="score-popup-container" id="scorePopupContainer"></div>
     </div>
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const nextCanvas = document.getElementById('nextCanvas');
-        const nextCtx = nextCanvas.getContext('2d');
-        const COLS = 10;
-        const ROWS = 20;
-        const BLOCK_SIZE = 20;
-        canvas.width = COLS * BLOCK_SIZE;
-        canvas.height = ROWS * BLOCK_SIZE;
-        const SHAPES = [[[1,1,1,1]],[[1,1],[1,1]],[[0,1,0],[1,1,1]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]],[[1,1,0],[0,1,1]],[[0,1,1],[1,1,0]]];
-        const COLORS = ['#63b3ed','#48bb78','#ed8936','#f56565','#9f7aea','#ed64a6','#4fd1c5'];
-        let board = [], currentPiece = null, nextPiece = null, score = 0, lines = 0, level = 1, gameState = 'idle', gameLoop = null, dropInterval = 1000;
-        function createBoard() { board = []; for(let row=0;row<ROWS;row++){ board[row]=[]; for(let col=0;col<COLS;col++){ board[row][col]=null; } } }
-        function getRandomPiece() { const idx = Math.floor(Math.random()*SHAPES.length); return { shape: SHAPES[idx], color: COLORS[idx], x: Math.floor(COLS/2)-Math.floor(SHAPES[idx][0].length/2), y: 0 }; }
-        function drawBlock(x,y,color) { ctx.fillStyle=color; ctx.fillRect(x*BLOCK_SIZE,y*BLOCK_SIZE,BLOCK_SIZE-1,BLOCK_SIZE-1); ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.strokeRect(x*BLOCK_SIZE,y*BLOCK_SIZE,BLOCK_SIZE-1,BLOCK_SIZE-1); }
-        function drawBoard() { ctx.fillStyle='#1a1a2e'; ctx.fillRect(0,0,canvas.width,canvas.height); for(let row=0;row<ROWS;row++){ for(let col=0;col<COLS;col++){ if(board[row][col]) drawBlock(col,row,board[row][col]); } } }
-        function drawPiece(piece) { for(let row=0;row<piece.shape.length;row++){ for(let col=0;col<piece.shape[row].length;col++){ if(piece.shape[row][col]) drawBlock(piece.x+col,piece.y+row,piece.color); } } }
-        function drawNextPiece() { nextCtx.fillStyle='rgba(0,0,0,0.3)'; nextCtx.fillRect(0,0,nextCanvas.width,nextCanvas.height); if(nextPiece){ const ox=(nextCanvas.width-nextPiece.shape[0].length*BLOCK_SIZE)/2; const oy=(nextCanvas.height-nextPiece.shape.length*BLOCK_SIZE)/2; for(let row=0;row<nextPiece.shape.length;row++){ for(let col=0;col<nextPiece.shape[row].length;col++){ if(nextPiece.shape[row][col]){ nextCtx.fillStyle=nextPiece.color; nextCtx.fillRect(ox+col*BLOCK_SIZE,oy+row*BLOCK_SIZE,BLOCK_SIZE-1,BLOCK_SIZE-1); } } } } }
-        function checkCollision(piece,ox=0,oy=0) { for(let row=0;row<piece.shape.length;row++){ for(let col=0;col<piece.shape[row].length;col++){ if(piece.shape[row][col]){ const nx=piece.x+col+ox; const ny=piece.y+row+oy; if(nx<0||nx>=COLS||ny>=ROWS) return true; if(ny>=0&&board[ny][nx]) return true; } } } return false; }
-        function mergePiece() { for(let row=0;row<currentPiece.shape.length;row++){ for(let col=0;col<currentPiece.shape[row].length;col++){ if(currentPiece.shape[row][col]){ const by=currentPiece.y+row; const bx=currentPiece.x+col; if(by>=0) board[by][bx]=currentPiece.color; } } } }
-        function clearLines() { let cl=0; for(let row=ROWS-1;row>=0;row--){ if(board[row].every(c=>c!==null)){ board.splice(row,1); board.unshift(new Array(COLS).fill(null)); cl++; row++; } } if(cl>0){ const pts=[0,100,300,500,800]; score+=pts[cl]*level; lines+=cl; if(lines>=level*10){ level++; dropInterval=Math.max(100,1000-(level-1)*100); } updateUI(); } }
-        function rotatePiece() { const shape=currentPiece.shape; const rotated=[]; for(let col=0;col<shape[0].length;col++){ rotated[col]=[]; for(let row=shape.length-1;row>=0;row--){ rotated[col].push(shape[row][col]); } } const rp={...currentPiece,shape:rotated}; if(!checkCollision(rp)) currentPiece=rp; else { const kicks=[-1,1,-2,2]; for(const k of kicks){ rp.x+=k; if(!checkCollision(rp)){ currentPiece=rp; break; } rp.x-=k; } } }
-        function movePiece(dx,dy) { if(!checkCollision(currentPiece,dx,dy)){ currentPiece.x+=dx; currentPiece.y+=dy; return true; } return false; }
-        function dropPiece() { if(!movePiece(0,1)){ mergePiece(); clearLines(); spawnPiece(); } }
-        function hardDrop() { while(movePiece(0,1)) score+=2; dropPiece(); updateUI(); }
-        function spawnPiece() { currentPiece=nextPiece||getRandomPiece(); nextPiece=getRandomPiece(); if(checkCollision(currentPiece)){ gameOver(); return; } drawNextPiece(); }
-        function gameOver() { gameState='gameover'; clearInterval(gameLoop); ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#fff'; ctx.font='bold 24px Arial'; ctx.textAlign='center'; ctx.fillText('游戏结束',canvas.width/2,canvas.height/2); ctx.font='16px Arial'; ctx.fillText('最终分数: '+score,canvas.width/2,canvas.height/2+30); }
-        function updateUI() { document.getElementById('score').textContent=score; document.getElementById('lines').textContent=lines; document.getElementById('level').textContent=level; }
-        function startGame() { createBoard(); score=0; lines=0; level=1; dropInterval=1000; nextPiece=getRandomPiece(); spawnPiece(); gameState='playing'; gameLoop=setInterval(()=>{ if(gameState==='playing'){ dropPiece(); drawBoard(); drawPiece(currentPiece); } },dropInterval); }
-        function pauseGame() { if(gameState==='playing'){ gameState='paused'; clearInterval(gameLoop); ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#fff'; ctx.font='bold 24px Arial'; ctx.textAlign='center'; ctx.fillText('暂停',canvas.width/2,canvas.height/2); } else if(gameState==='paused'){ gameState='playing'; gameLoop=setInterval(()=>{ if(gameState==='playing'){ dropPiece(); drawBoard(); drawPiece(currentPiece); } },dropInterval); } }
-        function resetGame() { clearInterval(gameLoop); startGame(); }
-        document.getElementById('startBtn').addEventListener('click',startGame);
-        document.getElementById('pauseBtn').addEventListener('click',pauseGame);
-        document.getElementById('resetBtn').addEventListener('click',resetGame);
-        document.addEventListener('keydown',e=>{ if(gameState!=='playing') return; switch(e.key){ case 'ArrowLeft': movePiece(-1,0); break; case 'ArrowRight': movePiece(1,0); break; case 'ArrowDown': movePiece(0,1); score+=1; updateUI(); break; case 'ArrowUp': rotatePiece(); break; case ' ': hardDrop(); break; case 'p': case 'P': pauseGame(); break; } drawBoard(); drawPiece(currentPiece); });
-        createBoard(); drawBoard();
-    </script>
+
+    <script src="game.js"></script>
 </body>
 </html>
